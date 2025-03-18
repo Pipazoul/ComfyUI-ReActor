@@ -318,13 +318,18 @@ def swap_face(
                 return result_image
 
             if source_img is not None:
-                # If empty source_faces_index list is provided, use first face by default
-                if len(source_faces_index) == 0 and len(source_faces) > 0:
-                    source_face = sort_by_order(source_faces, faces_order[1])[0]
-                    src_wrong_gender = 0
+                # Initialize source_face for error checking
+                if len(source_faces) > 0:
+                    if len(source_faces_index) > 0:
+                        # Use the first specified index for initial setup
+                        source_face, src_wrong_gender = get_face_single(source_img, source_faces, face_index=source_faces_index[0], gender_source=gender_source, order=faces_order[1])
+                    else:
+                        # If no indices specified, use first face by default for initial setup 
+                        source_face = sort_by_order(source_faces, faces_order[1])[0]
+                        src_wrong_gender = 0
                 else:
-                    # Original behavior with specified index
-                    source_face, src_wrong_gender = get_face_single(source_img, source_faces, face_index=source_faces_index[0], gender_source=gender_source, order=faces_order[1])
+                    source_face = None
+                    src_wrong_gender = 0
             else:
                 # Using face model, get first face (if available)
                 if len(source_faces) > 0:
@@ -355,8 +360,21 @@ def swap_face(
                         logger.status("Checked all existing target faces, skipping swapping...")
                         break
 
-                    if len(source_faces_index) > 1 and source_face_idx > 0:
-                        source_face, src_wrong_gender = get_face_single(source_img, source_faces, face_index=source_faces_index[source_face_idx], gender_source=gender_source, order=faces_order[1])
+                    # When using multiple source faces, cycle through them based on target face index
+                    if len(source_faces_index) > 0:
+                        # If specific indices are provided, use them in the order they are provided
+                        # (cycling through if there are more target faces than source faces)
+                        idx = source_face_idx % len(source_faces_index)
+                        source_face_index = source_faces_index[idx]
+                        source_face, src_wrong_gender = get_face_single(source_img, source_faces, face_index=source_face_index, gender_source=gender_source, order=faces_order[1])
+                        logger.status(f"Using source face {source_face_index} for target face {face_num}")
+                    elif len(source_faces) > 0:
+                        # If no specific indices are provided, cycle through all available faces
+                        sorted_faces = sort_by_order(source_faces, faces_order[1])
+                        idx = source_face_idx % len(sorted_faces)
+                        source_face = sorted_faces[idx]
+                        logger.status(f"Using source face #{idx} for target face {face_num}")
+                        src_wrong_gender = 0
                     source_face_idx += 1
 
                     if source_face is not None and src_wrong_gender == 0:
@@ -514,13 +532,18 @@ def swap_face_many(
                 return result_images
 
             if source_img is not None:
-                # If empty source_faces_index list is provided, use first face by default
-                if len(source_faces_index) == 0 and len(source_faces) > 0:
-                    source_face = sort_by_order(source_faces, faces_order[1])[0]
-                    src_wrong_gender = 0
+                # Initialize source_face for error checking
+                if len(source_faces) > 0:
+                    if len(source_faces_index) > 0:
+                        # Use the first specified index for initial setup
+                        source_face, src_wrong_gender = get_face_single(source_img, source_faces, face_index=source_faces_index[0], gender_source=gender_source, order=faces_order[1])
+                    else:
+                        # If no indices specified, use first face by default for initial setup 
+                        source_face = sort_by_order(source_faces, faces_order[1])[0]
+                        src_wrong_gender = 0
                 else:
-                    # Original behavior with specified index
-                    source_face, src_wrong_gender = get_face_single(source_img, source_faces, face_index=source_faces_index[0], gender_source=gender_source, order=faces_order[1])
+                    source_face = None
+                    src_wrong_gender = 0
             else:
                 # Using face model, get first face (if available)
                 if len(source_faces) > 0:
@@ -548,8 +571,21 @@ def swap_face_many(
                         logger.status("Checked all existing target faces, skipping swapping...")
                         break
 
-                    if len(source_faces_index) > 1 and source_face_idx > 0:
-                        source_face, src_wrong_gender = get_face_single(source_img, source_faces, face_index=source_faces_index[source_face_idx], gender_source=gender_source, order=faces_order[1])
+                    # When using multiple source faces, cycle through them based on target face index
+                    if len(source_faces_index) > 0:
+                        # If specific indices are provided, use them in the order they are provided
+                        # (cycling through if there are more target faces than source faces)
+                        idx = source_face_idx % len(source_faces_index)
+                        source_face_index = source_faces_index[idx]
+                        source_face, src_wrong_gender = get_face_single(source_img, source_faces, face_index=source_face_index, gender_source=gender_source, order=faces_order[1])
+                        logger.status(f"Using source face {source_face_index} for target face {face_num}")
+                    elif len(source_faces) > 0:
+                        # If no specific indices are provided, cycle through all available faces
+                        sorted_faces = sort_by_order(source_faces, faces_order[1])
+                        idx = source_face_idx % len(sorted_faces)
+                        source_face = sorted_faces[idx]
+                        logger.status(f"Using source face #{idx} for target face {face_num}")
+                        src_wrong_gender = 0
                     source_face_idx += 1
 
                     if source_face is not None and src_wrong_gender == 0:
