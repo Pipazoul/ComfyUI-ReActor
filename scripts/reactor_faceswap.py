@@ -75,16 +75,25 @@ class FaceSwapScript(scripts.Script):
             self.face_restore_visibility = face_restore_visibility
             self.codeformer_weight = codeformer_weight
             self.interpolation = interpolation
-            self.source_faces_index = [
-                int(x) for x in source_faces_index.strip(",").split(",") if x.isnumeric()
-            ]
-            self.faces_index = [
-                int(x) for x in faces_index.strip(",").split(",") if x.isnumeric()
-            ]
-            if len(self.source_faces_index) == 0:
-                self.source_faces_index = [0]
-            if len(self.faces_index) == 0:
-                self.faces_index = [0]
+            # Parse source_faces_index
+            if source_faces_index == "":
+                self.source_faces_index = []  # Empty list means all faces
+            else:
+                self.source_faces_index = [
+                    int(x) for x in source_faces_index.strip(",").split(",") if x.isnumeric()
+                ]
+                if len(self.source_faces_index) == 0:
+                    self.source_faces_index = []
+            
+            # Parse faces_index
+            if faces_index == "":
+                self.faces_index = []  # Empty list means all faces
+            else:
+                self.faces_index = [
+                    int(x) for x in faces_index.strip(",").split(",") if x.isnumeric()
+                ]
+                if len(self.faces_index) == 0:
+                    self.faces_index = []
             
             if self.gender_source is None or self.gender_source == "no":
                 self.gender_source = 0

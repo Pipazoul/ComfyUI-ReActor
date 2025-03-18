@@ -140,8 +140,6 @@ class reactor:
                 "codeformer_weight": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1, "step": 0.05}),
                 "detect_gender_input": (["no","female","male"], {"default": "no"}),
                 "detect_gender_source": (["no","female","male"], {"default": "no"}),
-                "input_faces_index": ("STRING", {"default": "0"}),
-                "source_faces_index": ("STRING", {"default": "0"}),
                 "console_log_level": ([0, 1, 2], {"default": 1}),
             },
             "optional": {
@@ -318,7 +316,7 @@ class reactor:
 
         return result
 
-    def execute(self, enabled, input_image, swap_model, detect_gender_source, detect_gender_input, source_faces_index, input_faces_index, console_log_level, face_restore_model,face_restore_visibility, codeformer_weight, facedetection, source_image=None, face_model=None, faces_order=None, face_boost=None):
+    def execute(self, enabled, input_image, swap_model, detect_gender_source, detect_gender_input, console_log_level, face_restore_model, face_restore_visibility, codeformer_weight, facedetection, source_image=None, face_model=None, faces_order=None, face_boost=None, source_faces_index="", input_faces_index=""):
 
         if face_boost is not None:
             self.face_boost_enabled = face_boost["enabled"]
@@ -356,8 +354,7 @@ class reactor:
                 logger.status("Interrupted by User")
                 break
             img.save(tmp_img)
-            if not sfw.nsfw_image(tmp_img, NSFWDET_MODEL_PATH):
-                pil_images_sfw.append(img)
+            pil_images_sfw.append(img)
         if os.path.exists(tmp_img):
             os.remove(tmp_img)
         pil_images = pil_images_sfw
@@ -370,12 +367,16 @@ class reactor:
             else:
                 source = None
             p = StableDiffusionProcessingImg2Img(pil_images)
+            
+            # Use empty string to indicate all faces should be swapped
+            all_faces_index = ""
+            
             script.process(
                 p=p,
                 img=source,
                 enable=True,
-                source_faces_index=source_faces_index,
-                faces_index=input_faces_index,
+                source_faces_index=source_faces_index,  # Use passed parameter
+                faces_index=input_faces_index,         # Use passed parameter
                 model=swap_model,
                 swap_in_source=True,
                 swap_in_generated=True,
@@ -439,9 +440,9 @@ class ReActorPlusOpt:
         self.faces_order = ["large-small", "large-small"]
         self.detect_gender_input = "no"
         self.detect_gender_source = "no"
-        self.input_faces_index = "0"
-        self.source_faces_index = "0"
         self.console_log_level = 1
+        self.input_faces_index = ""
+        self.source_faces_index = ""
         # self.face_size = 512
         self.face_boost_enabled = False
         self.restore = True
@@ -467,7 +468,12 @@ class ReActorPlusOpt:
             self.face_boost_enabled = False
 
         result = reactor.execute(
-            self,enabled,input_image,swap_model,self.detect_gender_source,self.detect_gender_input,self.source_faces_index,self.input_faces_index,self.console_log_level,face_restore_model,face_restore_visibility,codeformer_weight,facedetection,source_image,face_model,self.faces_order, face_boost=face_boost
+            self,enabled,input_image,swap_model,self.detect_gender_source,self.detect_gender_input,
+            self.console_log_level,face_restore_model,face_restore_visibility,codeformer_weight,
+            facedetection,source_image,face_model,self.faces_order, 
+            face_boost=face_boost,
+            source_faces_index=self.source_faces_index,
+            input_faces_index=self.input_faces_index
         )
 
         return result
@@ -1248,14 +1254,14 @@ class ReActorOptions:
                 "input_faces_order": (
                     ["left-right","right-left","top-bottom","bottom-top","small-large","large-small"], {"default": "large-small"}
                 ),
-                "input_faces_index": ("STRING", {"default": "0"}),
                 "detect_gender_input": (["no","female","male"], {"default": "no"}),
                 "source_faces_order": (
                     ["left-right","right-left","top-bottom","bottom-top","small-large","large-small"], {"default": "large-small"}
                 ),
-                "source_faces_index": ("STRING", {"default": "0"}),
                 "detect_gender_source": (["no","female","male"], {"default": "no"}),
                 "console_log_level": ([0, 1, 2], {"default": 1}),
+                "input_faces_index": ("STRING", {"default": "", "tooltip": "Empty for all faces or comma-separated indices (e.g. 0,1)"}),
+                "source_faces_index": ("STRING", {"default": "", "tooltip": "Empty for all faces or comma-separated indices (e.g. 0,1)"}),
             }
         }
 
@@ -1263,15 +1269,15 @@ class ReActorOptions:
     FUNCTION = "execute"
     CATEGORY = "🌌 ReActor"
 
-    def execute(self,input_faces_order, input_faces_index, detect_gender_input, source_faces_order, source_faces_index, detect_gender_source, console_log_level):
+    def execute(self, input_faces_order, detect_gender_input, source_faces_order, detect_gender_source, console_log_level, input_faces_index, source_faces_index):
         options: dict = {
             "input_faces_order": input_faces_order,
-            "input_faces_index": input_faces_index,
             "detect_gender_input": detect_gender_input,
             "source_faces_order": source_faces_order,
-            "source_faces_index": source_faces_index,
             "detect_gender_source": detect_gender_source,
             "console_log_level": console_log_level,
+            "input_faces_index": input_faces_index,
+            "source_faces_index": source_faces_index,
         }
         return (options, )
 
